@@ -39,11 +39,14 @@ namespace DiscImageChef.VideoNow
 {
     static class MainClass
     {
+        const  int                                   max_size = 635040000;
         static string                                AssemblyCopyright;
         static string                                AssemblyTitle;
         static AssemblyInformationalVersionAttribute AssemblyVersion;
-        const int max_size = 635040000;
-        static readonly byte[] frameMarker = { 0xE3, 0x81, 0xC7, 0xE3, 0x81, 0xC7, 0xE3, 0x81};
+        static readonly byte[] frameMarker =
+            {
+                0xE3, 0x81, 0xC7, 0xE3, 0x81, 0xC7, 0xE3, 0x81
+            };
 
         public static void Main(string[] args)
         {
@@ -86,8 +89,8 @@ namespace DiscImageChef.VideoNow
             Console.WriteLine("File: {0}", args[0]);
             Console.WriteLine("Searching for first frame....");
 
-            long framePosition = 0;
-            byte[] buffer = new byte[frameMarker.Length];
+            long   framePosition = 0;
+            byte[] buffer        = new byte[frameMarker.Length];
 
             while(framePosition < 19600)
             {
@@ -105,8 +108,76 @@ namespace DiscImageChef.VideoNow
                 return;
             }
 
-            Console.WriteLine("First frame found at {0}", framePosition);
+            Console.WriteLine("First frame found at {0}",             framePosition);
             Console.WriteLine("First frame {0} at a sector boundary", framePosition % 2352 == 0 ? "is" : "is not");
+
+            int  totalFrames = 1;
+            char progress    = ' ';
+            framePosition += 19600;
+
+            while(framePosition + 19600 < fs.Length)
+            {
+                switch(totalFrames % 4)
+                {
+                    case 0:
+                        progress = '-';
+                        break;
+                    case 1:
+                        progress = '\\';
+                        break;
+                    case 2:
+                        progress = '|';
+                        break;
+                    case 3:
+                        progress = '/';
+                        break;
+                }
+
+                Console.Write("\rLooking for more frames {0}", progress);
+
+                if(!buffer.SequenceEqual(frameMarker))
+                {
+                    Console.Write("\r                            \r");
+                    Console.WriteLine("Frame {0} and the next one are not aligned...", totalFrames);
+                    long expectedFramePosition = framePosition;
+
+                    while(framePosition < fs.Length)
+                    {
+                        fs.Position = framePosition;
+                        fs.Read(buffer, 0, buffer.Length);
+
+                        if(buffer.SequenceEqual(frameMarker))
+                        {
+                            totalFrames++;
+                            Console.WriteLine("Frame {1} found at {0}, {2} bytes apart", framePosition, totalFrames,
+                                              framePosition - expectedFramePosition);
+                            Console.WriteLine("Frame {1} {0} at a sector boundary",
+                                              framePosition % 2352 == 0 ? "is" : "is not", totalFrames);
+                            framePosition += 19600;
+
+                            break;
+                        }
+
+                        framePosition++;
+                    }
+
+                    continue;
+                }
+
+                if(framePosition % 2352 == 0)
+                {
+                    Console.Write("\r                            \r");
+                    Console.WriteLine("Frame {0} is at a sector boundary", totalFrames);
+                }
+
+                totalFrames++;
+                fs.Position = framePosition;
+                fs.Read(buffer, 0, buffer.Length);
+                framePosition += 19600;
+            }
+
+            Console.Write("\r                            \r");
+            Console.WriteLine("Found {0} frames", totalFrames);
         }
 
         static void PrintCopyright()
@@ -115,6 +186,5 @@ namespace DiscImageChef.VideoNow
             Console.WriteLine("{0}",     AssemblyCopyright);
             Console.WriteLine();
         }
-
     }
 }
