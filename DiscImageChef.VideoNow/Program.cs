@@ -31,6 +31,8 @@
 // ****************************************************************************/
 
 using System;
+using System.IO;
+using System.Linq;
 using System.Reflection;
 
 namespace DiscImageChef.VideoNow
@@ -40,6 +42,8 @@ namespace DiscImageChef.VideoNow
         static string                                AssemblyCopyright;
         static string                                AssemblyTitle;
         static AssemblyInformationalVersionAttribute AssemblyVersion;
+        const int max_size = 635040000;
+        static readonly byte[] frameMarker = { 0xE3, 0x81, 0xC7, 0xE3, 0x81, 0xC7, 0xE3, 0x81};
 
         public static void Main(string[] args)
         {
@@ -52,6 +56,57 @@ namespace DiscImageChef.VideoNow
             AssemblyCopyright = ((AssemblyCopyrightAttribute)attributes[0]).Copyright;
 
             PrintCopyright();
+
+            if(args.Length != 1)
+            {
+                Console.WriteLine("Usage: DiscImageChef.VideoNow dump.raw");
+                return;
+            }
+
+            if(!File.Exists(args[0]))
+            {
+                Console.WriteLine("Specified file does not exist.");
+                return;
+            }
+
+            FileStream fs;
+            try { fs = File.Open(args[0], FileMode.Open, FileAccess.Read, FileShare.Read); }
+            catch
+            {
+                Console.WriteLine("Could not open specified file.");
+                return;
+            }
+
+            if(fs.Length > max_size)
+            {
+                Console.WriteLine("File is too big, not continuing.");
+                return;
+            }
+
+            Console.WriteLine("File: {0}", args[0]);
+            Console.WriteLine("Searching for first frame....");
+
+            long framePosition = 0;
+            byte[] buffer = new byte[frameMarker.Length];
+
+            while(framePosition < 19600)
+            {
+                fs.Position = framePosition;
+                fs.Read(buffer, 0, buffer.Length);
+
+                if(buffer.SequenceEqual(frameMarker)) break;
+
+                framePosition++;
+            }
+
+            if(!buffer.SequenceEqual(frameMarker))
+            {
+                Console.WriteLine("Could not find any frame!");
+                return;
+            }
+
+            Console.WriteLine("First frame found at {0}", framePosition);
+            Console.WriteLine("First frame {0} at a sector boundary", framePosition % 2352 == 0 ? "is" : "is not");
         }
 
         static void PrintCopyright()
