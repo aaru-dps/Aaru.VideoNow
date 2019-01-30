@@ -34,6 +34,7 @@ using System;
 using System.IO;
 using System.Linq;
 using System.Reflection;
+using System.Runtime.InteropServices;
 
 namespace DiscImageChef.VideoNow
 {
@@ -119,6 +120,7 @@ namespace DiscImageChef.VideoNow
 
             long   framePosition = 0;
             byte[] buffer        = new byte[frameMarker.Length];
+            long   framePositionForAudio;
 
             while(framePosition < 19600)
             {
@@ -142,9 +144,54 @@ namespace DiscImageChef.VideoNow
 
             Console.WriteLine("First frame found at {0}",             framePosition);
             Console.WriteLine("First frame {0} at a sector boundary", framePosition % 2352 == 0 ? "is" : "is not");
+            char progress = ' ';
 
-            int  totalFrames = 1;
-            char progress    = ' ';
+            FileStream outFs = new FileStream(args[0] + ".audio.wav", FileMode.Create, FileAccess.ReadWrite,
+                                              FileShare.Read);
+
+            WaveHeader waveHeader = new WaveHeader {id = 0x46464952, format = 0x45564157};
+            FormatChunk fmtChunk = new FormatChunk
+            {
+                id            = 0x20746D66,
+                size          = 16,
+                format        = 1,
+                channels      = 2,
+                sampleRate    = 17640,
+                bitsPerSample = 8
+            };
+            fmtChunk.byteRate   = fmtChunk.sampleRate * fmtChunk.channels * fmtChunk.bitsPerSample / 8;
+            fmtChunk.blockAlign = (ushort)(fmtChunk.channels * fmtChunk.bitsPerSample / 8);
+            DataChunkHeader dataChunkHeader = new DataChunkHeader {id = 0x61746164};
+
+            long headersSize = Marshal.SizeOf(waveHeader) + Marshal.SizeOf(fmtChunk) + Marshal.SizeOf(dataChunkHeader);
+            outFs.Write(new byte[headersSize], 0, (int)headersSize);
+
+            fs.Position = framePosition + 8;
+            while(fs.Position + 10 < framePosition + 19600)
+            {
+                switch(fs.Position % 4)
+                {
+                    case 0:
+                        progress = '-';
+                        break;
+                    case 1:
+                        progress = '\\';
+                        break;
+                    case 2:
+                        progress = '|';
+                        break;
+                    case 3:
+                        progress = '/';
+                        break;
+                }
+
+                Console.Write("\rExtracting audio {0}        ", progress);
+                outFs.WriteByte((byte)fs.ReadByte());
+
+                fs.Position += 9;
+            }
+
+            int totalFrames = 1;
             framePosition += 19600;
 
             while(framePosition + 19600 < fs.Length)
@@ -184,7 +231,34 @@ namespace DiscImageChef.VideoNow
 
                         if(buffer.SequenceEqual(frameMarker))
                         {
+                            Console.Write("\r                            \r");
+                            fs.Position = framePosition + 8;
+                            while(fs.Position + 10 < framePosition + 19600)
+                            {
+                                switch(fs.Position % 4)
+                                {
+                                    case 0:
+                                        progress = '-';
+                                        break;
+                                    case 1:
+                                        progress = '\\';
+                                        break;
+                                    case 2:
+                                        progress = '|';
+                                        break;
+                                    case 3:
+                                        progress = '/';
+                                        break;
+                                }
+
+                                Console.Write("\rExtracting audio {0}        ", progress);
+                                outFs.WriteByte((byte)fs.ReadByte());
+
+                                fs.Position += 9;
+                            }
+
                             totalFrames++;
+                            Console.Write("\r                            \r");
                             Console.WriteLine("Frame {1} found at {0}, {2} bytes apart", framePosition, totalFrames,
                                               framePosition - expectedFramePosition);
                             Console.WriteLine("Frame {1} {0} at a sector boundary",
@@ -206,6 +280,32 @@ namespace DiscImageChef.VideoNow
                     Console.WriteLine("Frame {0} is at a sector boundary", totalFrames);
                 }
 
+                Console.Write("\r                            \r");
+                fs.Position = framePosition + 8;
+                while(fs.Position + 10 < framePosition + 19600)
+                {
+                    switch(fs.Position % 4)
+                    {
+                        case 0:
+                            progress = '-';
+                            break;
+                        case 1:
+                            progress = '\\';
+                            break;
+                        case 2:
+                            progress = '|';
+                            break;
+                        case 3:
+                            progress = '/';
+                            break;
+                    }
+
+                    Console.Write("\rExtracting audio {0}", progress);
+                    outFs.WriteByte((byte)fs.ReadByte());
+
+                    fs.Position += 9;
+                }
+
                 totalFrames++;
                 fs.Position = framePosition;
                 fs.Read(buffer, 0, buffer.Length);
@@ -214,6 +314,35 @@ namespace DiscImageChef.VideoNow
 
             Console.Write("\r                            \r");
             Console.WriteLine("Found {0} frames", totalFrames);
+
+            fs.Close();
+            outFs.Position = 0;
+
+            dataChunkHeader.size = (uint)(outFs.Length - headersSize);
+            waveHeader.size      = (uint)(outFs.Length - 8);
+
+            buffer = new byte[Marshal.SizeOf(waveHeader)];
+            IntPtr ptr = Marshal.AllocHGlobal(buffer.Length);
+            Marshal.StructureToPtr(waveHeader, ptr, false);
+            Marshal.Copy(ptr, buffer, 0, buffer.Length);
+            Marshal.FreeHGlobal(ptr);
+            outFs.Write(buffer, 0, buffer.Length);
+
+            buffer = new byte[Marshal.SizeOf(fmtChunk)];
+            ptr    = Marshal.AllocHGlobal(buffer.Length);
+            Marshal.StructureToPtr(fmtChunk, ptr, false);
+            Marshal.Copy(ptr, buffer, 0, buffer.Length);
+            Marshal.FreeHGlobal(ptr);
+            outFs.Write(buffer, 0, buffer.Length);
+
+            buffer = new byte[Marshal.SizeOf(dataChunkHeader)];
+            ptr    = Marshal.AllocHGlobal(buffer.Length);
+            Marshal.StructureToPtr(dataChunkHeader, ptr, false);
+            Marshal.Copy(ptr, buffer, 0, buffer.Length);
+            Marshal.FreeHGlobal(ptr);
+            outFs.Write(buffer, 0, buffer.Length);
+
+            outFs.Close();
         }
 
         static void PrintCopyright()
@@ -222,5 +351,33 @@ namespace DiscImageChef.VideoNow
             Console.WriteLine("{0}",     AssemblyCopyright);
             Console.WriteLine();
         }
+    }
+
+    [StructLayout(LayoutKind.Sequential)]
+    struct WaveHeader
+    {
+        public uint id;
+        public uint size;
+        public uint format;
+    }
+
+    [StructLayout(LayoutKind.Sequential)]
+    struct FormatChunk
+    {
+        public uint   id;
+        public uint   size;
+        public ushort format;
+        public ushort channels;
+        public uint   sampleRate;
+        public uint   byteRate;
+        public ushort blockAlign;
+        public ushort bitsPerSample;
+    }
+
+    [StructLayout(LayoutKind.Sequential)]
+    struct DataChunkHeader
+    {
+        public uint id;
+        public uint size;
     }
 }
