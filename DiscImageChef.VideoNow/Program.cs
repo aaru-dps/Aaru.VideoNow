@@ -120,7 +120,6 @@ namespace DiscImageChef.VideoNow
 
             long   framePosition = 0;
             byte[] buffer        = new byte[frameMarker.Length];
-            long   framePositionForAudio;
 
             while(framePosition < 19600)
             {
@@ -166,10 +165,14 @@ namespace DiscImageChef.VideoNow
             long headersSize = Marshal.SizeOf(waveHeader) + Marshal.SizeOf(fmtChunk) + Marshal.SizeOf(dataChunkHeader);
             outFs.Write(new byte[headersSize], 0, (int)headersSize);
 
-            fs.Position = framePosition + 8;
-            while(fs.Position + 10 < framePosition + 19600)
+            fs.Position = framePosition;
+            byte[] frameBuffer = new byte[19600];
+            fs.Read(frameBuffer, 0, frameBuffer.Length);
+            frameBuffer = SwapBuffer(frameBuffer);
+
+            for(int i = 9; i <= frameBuffer.Length; i += 10)
             {
-                switch(fs.Position % 4)
+                switch(i / 10 % 4)
                 {
                     case 0:
                         progress = '-';
@@ -186,13 +189,12 @@ namespace DiscImageChef.VideoNow
                 }
 
                 Console.Write("\rExtracting audio {0}        ", progress);
-                outFs.WriteByte((byte)fs.ReadByte());
-
-                fs.Position += 9;
+                outFs.WriteByte(frameBuffer[i]);
             }
 
             int totalFrames = 1;
             framePosition += 19600;
+            buffer = new byte[frameMarker.Length];
 
             while(framePosition + 19600 < fs.Length)
             {
@@ -232,10 +234,15 @@ namespace DiscImageChef.VideoNow
                         if(buffer.SequenceEqual(frameMarker))
                         {
                             Console.Write("\r                            \r");
-                            fs.Position = framePosition + 8;
-                            while(fs.Position + 10 < framePosition + 19600)
+
+                            fs.Position = framePosition;
+                            frameBuffer = new byte[19600];
+                            fs.Read(frameBuffer, 0, frameBuffer.Length);
+                            frameBuffer = SwapBuffer(frameBuffer);
+
+                            for(int i = 9; i <= frameBuffer.Length; i += 10)
                             {
-                                switch(fs.Position % 4)
+                                switch(i / 10 % 4)
                                 {
                                     case 0:
                                         progress = '-';
@@ -252,9 +259,7 @@ namespace DiscImageChef.VideoNow
                                 }
 
                                 Console.Write("\rExtracting audio {0}        ", progress);
-                                outFs.WriteByte((byte)fs.ReadByte());
-
-                                fs.Position += 9;
+                                outFs.WriteByte(frameBuffer[i]);
                             }
 
                             totalFrames++;
@@ -281,10 +286,14 @@ namespace DiscImageChef.VideoNow
                 }
 
                 Console.Write("\r                            \r");
-                fs.Position = framePosition + 8;
-                while(fs.Position + 10 < framePosition + 19600)
+                fs.Position = framePosition;
+                frameBuffer = new byte[19600];
+                fs.Read(frameBuffer, 0, frameBuffer.Length);
+                frameBuffer = SwapBuffer(frameBuffer);
+
+                for(int i = 9; i <= frameBuffer.Length; i += 10)
                 {
-                    switch(fs.Position % 4)
+                    switch(i / 10 % 4)
                     {
                         case 0:
                             progress = '-';
@@ -300,10 +309,8 @@ namespace DiscImageChef.VideoNow
                             break;
                     }
 
-                    Console.Write("\rExtracting audio {0}", progress);
-                    outFs.WriteByte((byte)fs.ReadByte());
-
-                    fs.Position += 9;
+                    Console.Write("\rExtracting audio {0}        ", progress);
+                    outFs.WriteByte(frameBuffer[i]);
                 }
 
                 totalFrames++;
@@ -350,6 +357,17 @@ namespace DiscImageChef.VideoNow
             Console.WriteLine("{0} {1}", AssemblyTitle, AssemblyVersion?.InformationalVersion);
             Console.WriteLine("{0}",     AssemblyCopyright);
             Console.WriteLine();
+        }
+
+        static byte[] SwapBuffer(byte[] buffer)
+        {
+            byte[] tmp = new byte[buffer.Length];
+            for(int i = 0; i < buffer.Length; i += 2)
+            {
+                tmp[i] = buffer[i + 1];
+                tmp[i             + 1] = buffer[i];
+            }
+            return tmp;
         }
     }
 
