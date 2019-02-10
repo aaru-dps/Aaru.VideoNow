@@ -8,11 +8,17 @@
       <e p=".git/info/exclude" t="IncludeRecursive" />
       <e p="DiscImageChef.VideoNow" t="IncludeRecursive">
         <e p="DiscImageChef.VideoNow.csproj" t="IncludeRecursive" />
-        <e p="Localization.Designer.cs" t="Include" />
-        <e p="Localization.resx" t="Include" />
         <e p="Program.cs" t="Include" />
         <e p="Properties" t="Include">
           <e p="AssemblyInfo.cs" t="Include" />
+          <e p="Localization.Designer.cs" t="Include" />
+          <e p="Localization.es.resx" t="Include" />
+          <e p="Localization.fr.resx" t="Include" />
+          <e p="Localization.it.resx" t="Include" />
+          <e p="Localization.pt-BR.resx" t="Include" />
+          <e p="Localization.pt-PT.resx" t="Include" />
+          <e p="Localization.resx" t="Include" />
+          <e p="Localization.ru.resx" t="Include" />
         </e>
         <e p="bin" t="ExcludeRecursive" />
         <e p="obj" t="ExcludeRecursive" />
