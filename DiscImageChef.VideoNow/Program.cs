@@ -35,6 +35,8 @@ using System.IO;
 using System.Linq;
 using System.Reflection;
 using System.Runtime.InteropServices;
+using SharpAvi;
+using SharpAvi.Output;
 
 namespace DiscImageChef.VideoNow
 {
@@ -76,15 +78,6 @@ namespace DiscImageChef.VideoNow
             0xFF, 0xFF, 0xFF, 0xFF, 0x00, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0x00, 0xFF, 0xFF,
             0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0x00, 0xFF
         };
-
-        static readonly byte[] bitmapHeader
-        = {
-            0x42, 0x4D, 0x36, 0x87, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x36, 0x00, 0x00, 0x00, 0x28, 0x00,
-            0x00, 0x00, 0x90, 0x00, 0x00, 0x00, 0x50, 0x00, 0x00, 0x00, 0x01, 0x00, 0x18, 0x00, 0x00, 0x00,
-            0x00, 0x00, 0x00, 0x87, 0x00, 0x00, 0x23, 0x2E, 0x00, 0x00, 0x23, 0x2E, 0x00, 0x00, 0x00, 0x00,
-            0x00, 0x00, 0x00, 0x00, 0x00, 0x00
-        };
-
 
         public static void Main(string[] args)
         {
@@ -154,31 +147,17 @@ namespace DiscImageChef.VideoNow
             Console.WriteLine("First frame {0} at a sector boundary", framePosition % 2352 == 0 ? "is" : "is not");
             char progress = ' ';
 
-            FileStream outFs = new FileStream(args[0] + ".audio.wav", FileMode.Create, FileAccess.ReadWrite,
-                                              FileShare.Read);
-
-            WaveHeader waveHeader = new WaveHeader {id = 0x46464952, format = 0x45564157};
-            FormatChunk fmtChunk = new FormatChunk
-            {
-                id            = 0x20746D66,
-                size          = 16,
-                format        = 1,
-                channels      = 2,
-                sampleRate    = 17640,
-                bitsPerSample = 8
-            };
-            fmtChunk.byteRate   = fmtChunk.sampleRate * fmtChunk.channels * fmtChunk.bitsPerSample / 8;
-            fmtChunk.blockAlign = (ushort)(fmtChunk.channels * fmtChunk.bitsPerSample / 8);
-            DataChunkHeader dataChunkHeader = new DataChunkHeader {id = 0x61746164};
-
-            long headersSize = Marshal.SizeOf(waveHeader) + Marshal.SizeOf(fmtChunk) + Marshal.SizeOf(dataChunkHeader);
-            outFs.Write(new byte[headersSize], 0, (int)headersSize);
+            AviWriter aviWriter = new AviWriter(args[0] + ".avi") {EmitIndex1 = true, FramesPerSecond = 18};
+            IAviVideoStream videoStream = aviWriter.AddVideoStream(144, 80, BitsPerPixel.Bpp24);
+            videoStream.Codec = KnownFourCCs.Codecs.Uncompressed;
+            var audioStream = aviWriter.AddAudioStream(2, 17640, 8);
 
             fs.Position = framePosition;
             byte[] frameBuffer = new byte[19600];
             fs.Read(frameBuffer, 0, frameBuffer.Length);
             frameBuffer = SwapBuffer(frameBuffer);
 
+            var outFs = new MemoryStream();
             for(int i = 9; i <= frameBuffer.Length; i += 10)
             {
                 switch(i / 10 % 4)
@@ -201,12 +180,9 @@ namespace DiscImageChef.VideoNow
                 outFs.WriteByte(frameBuffer[i]);
             }
 
-            FileStream frameFs = new FileStream($"{args[0]}.frame0000.bmp", FileMode.Create, FileAccess.ReadWrite,
-                                              FileShare.Read);
-            frameFs.Write(bitmapHeader, 0, bitmapHeader.Length);
-            frameBuffer = DecodeFrame(frameBuffer);
-            frameFs.Write(frameBuffer, 0, frameBuffer.Length);
-            frameFs.Close();
+            byte[] videoFrame = DecodeFrame(frameBuffer);
+            videoStream.WriteFrame(true, videoFrame, 0, videoFrame.Length);
+            audioStream.WriteBlock(outFs.ToArray(), 0, (int)outFs.Length);
 
             int totalFrames = 1;
             framePosition += 19600;
@@ -256,6 +232,7 @@ namespace DiscImageChef.VideoNow
                             fs.Read(frameBuffer, 0, frameBuffer.Length);
                             frameBuffer = SwapBuffer(frameBuffer);
 
+                            outFs = new MemoryStream();
                             for(int i = 9; i <= frameBuffer.Length; i += 10)
                             {
                                 switch(i / 10 % 4)
@@ -277,12 +254,9 @@ namespace DiscImageChef.VideoNow
                                 Console.Write("\rExtracting audio {0}        ", progress);
                                 outFs.WriteByte(frameBuffer[i]);
                             }
-                            frameFs = new FileStream($"{args[0]}.frame{totalFrames:D6}.bmp", FileMode.Create, FileAccess.ReadWrite,
-                                                                FileShare.Read);
-                            frameFs.Write(bitmapHeader, 0, bitmapHeader.Length);
-                            frameBuffer = DecodeFrame(frameBuffer);
-                            frameFs.Write(frameBuffer, 0, frameBuffer.Length);
-                            frameFs.Close();
+                            videoFrame = DecodeFrame(frameBuffer);
+                            videoStream.WriteFrame(true, videoFrame, 0, videoFrame.Length);
+                            audioStream.WriteBlock(outFs.ToArray(), 0, (int)outFs.Length);
 
                             totalFrames++;
                             Console.Write("\r                            \r");
@@ -313,6 +287,7 @@ namespace DiscImageChef.VideoNow
                 fs.Read(frameBuffer, 0, frameBuffer.Length);
                 frameBuffer = SwapBuffer(frameBuffer);
 
+                outFs = new MemoryStream();
                 for(int i = 9; i <= frameBuffer.Length; i += 10)
                 {
                     switch(i / 10 % 4)
@@ -334,12 +309,9 @@ namespace DiscImageChef.VideoNow
                     Console.Write("\rExtracting audio {0}        ", progress);
                     outFs.WriteByte(frameBuffer[i]);
                 }
-                frameFs = new FileStream($"{args[0]}.frame{totalFrames:D6}.bmp", FileMode.Create, FileAccess.ReadWrite,
-                                         FileShare.Read);
-                frameFs.Write(bitmapHeader, 0, bitmapHeader.Length);
-                frameBuffer = DecodeFrame(frameBuffer);
-                frameFs.Write(frameBuffer, 0, frameBuffer.Length);
-                frameFs.Close();
+                videoFrame = DecodeFrame(frameBuffer);
+                videoStream.WriteFrame(true, videoFrame, 0, videoFrame.Length);
+                audioStream.WriteBlock(outFs.ToArray(), 0, (int)outFs.Length);
 
                 totalFrames++;
                 fs.Position = framePosition;
@@ -351,33 +323,8 @@ namespace DiscImageChef.VideoNow
             Console.WriteLine("Found {0} frames", totalFrames);
 
             fs.Close();
-            outFs.Position = 0;
-
-            dataChunkHeader.size = (uint)(outFs.Length - headersSize);
-            waveHeader.size      = (uint)(outFs.Length - 8);
-
-            buffer = new byte[Marshal.SizeOf(waveHeader)];
-            IntPtr ptr = Marshal.AllocHGlobal(buffer.Length);
-            Marshal.StructureToPtr(waveHeader, ptr, false);
-            Marshal.Copy(ptr, buffer, 0, buffer.Length);
-            Marshal.FreeHGlobal(ptr);
-            outFs.Write(buffer, 0, buffer.Length);
-
-            buffer = new byte[Marshal.SizeOf(fmtChunk)];
-            ptr    = Marshal.AllocHGlobal(buffer.Length);
-            Marshal.StructureToPtr(fmtChunk, ptr, false);
-            Marshal.Copy(ptr, buffer, 0, buffer.Length);
-            Marshal.FreeHGlobal(ptr);
-            outFs.Write(buffer, 0, buffer.Length);
-
-            buffer = new byte[Marshal.SizeOf(dataChunkHeader)];
-            ptr    = Marshal.AllocHGlobal(buffer.Length);
-            Marshal.StructureToPtr(dataChunkHeader, ptr, false);
-            Marshal.Copy(ptr, buffer, 0, buffer.Length);
-            Marshal.FreeHGlobal(ptr);
-            outFs.Write(buffer, 0, buffer.Length);
-
             outFs.Close();
+            aviWriter.Close();
         }
 
         static void PrintCopyright()
@@ -475,42 +422,8 @@ namespace DiscImageChef.VideoNow
             }
 
             frameBuffer = videoFs.ToArray();
-            byte[] tmp = new byte[144 * 3];
-            for(int i = 0; i < 80; i++)
-            {
-                Array.Copy(frameBuffer, i * tmp.Length, tmp, 0, tmp.Length);
-                Array.Reverse(tmp);
-                Array.Copy(tmp, 0, frameBuffer, i *tmp.Length, tmp.Length);
-            }
+            Array.Reverse(frameBuffer);
             return frameBuffer;
         }
-    }
-
-    [StructLayout(LayoutKind.Sequential)]
-    struct WaveHeader
-    {
-        public uint id;
-        public uint size;
-        public uint format;
-    }
-
-    [StructLayout(LayoutKind.Sequential)]
-    struct FormatChunk
-    {
-        public uint   id;
-        public uint   size;
-        public ushort format;
-        public ushort channels;
-        public uint   sampleRate;
-        public uint   byteRate;
-        public ushort blockAlign;
-        public ushort bitsPerSample;
-    }
-
-    [StructLayout(LayoutKind.Sequential)]
-    struct DataChunkHeader
-    {
-        public uint id;
-        public uint size;
     }
 }
