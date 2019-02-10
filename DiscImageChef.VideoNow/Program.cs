@@ -77,6 +77,15 @@ namespace DiscImageChef.VideoNow
             0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0x00, 0xFF
         };
 
+        static readonly byte[] bitmapHeader
+        = {
+            0x42, 0x4D, 0x36, 0x87, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x36, 0x00, 0x00, 0x00, 0x28, 0x00,
+            0x00, 0x00, 0x90, 0x00, 0x00, 0x00, 0x50, 0x00, 0x00, 0x00, 0x01, 0x00, 0x18, 0x00, 0x00, 0x00,
+            0x00, 0x00, 0x00, 0x87, 0x00, 0x00, 0x23, 0x2E, 0x00, 0x00, 0x23, 0x2E, 0x00, 0x00, 0x00, 0x00,
+            0x00, 0x00, 0x00, 0x00, 0x00, 0x00
+        };
+
+
         public static void Main(string[] args)
         {
             object[] attributes = typeof(MainClass).Assembly.GetCustomAttributes(typeof(AssemblyTitleAttribute), false);
@@ -192,6 +201,13 @@ namespace DiscImageChef.VideoNow
                 outFs.WriteByte(frameBuffer[i]);
             }
 
+            FileStream frameFs = new FileStream($"{args[0]}.frame0000.bmp", FileMode.Create, FileAccess.ReadWrite,
+                                              FileShare.Read);
+            frameFs.Write(bitmapHeader, 0, bitmapHeader.Length);
+            frameBuffer = DecodeFrame(frameBuffer);
+            frameFs.Write(frameBuffer, 0, frameBuffer.Length);
+            frameFs.Close();
+
             int totalFrames = 1;
             framePosition += 19600;
             buffer = new byte[frameMarker.Length];
@@ -261,6 +277,12 @@ namespace DiscImageChef.VideoNow
                                 Console.Write("\rExtracting audio {0}        ", progress);
                                 outFs.WriteByte(frameBuffer[i]);
                             }
+                            frameFs = new FileStream($"{args[0]}.frame{totalFrames:D6}.bmp", FileMode.Create, FileAccess.ReadWrite,
+                                                                FileShare.Read);
+                            frameFs.Write(bitmapHeader, 0, bitmapHeader.Length);
+                            frameBuffer = DecodeFrame(frameBuffer);
+                            frameFs.Write(frameBuffer, 0, frameBuffer.Length);
+                            frameFs.Close();
 
                             totalFrames++;
                             Console.Write("\r                            \r");
@@ -312,6 +334,12 @@ namespace DiscImageChef.VideoNow
                     Console.Write("\rExtracting audio {0}        ", progress);
                     outFs.WriteByte(frameBuffer[i]);
                 }
+                frameFs = new FileStream($"{args[0]}.frame{totalFrames:D6}.bmp", FileMode.Create, FileAccess.ReadWrite,
+                                         FileShare.Read);
+                frameFs.Write(bitmapHeader, 0, bitmapHeader.Length);
+                frameBuffer = DecodeFrame(frameBuffer);
+                frameFs.Write(frameBuffer, 0, frameBuffer.Length);
+                frameFs.Close();
 
                 totalFrames++;
                 fs.Position = framePosition;
@@ -368,6 +396,93 @@ namespace DiscImageChef.VideoNow
                 tmp[i             + 1] = buffer[i];
             }
             return tmp;
+        }
+
+        static byte[] DecodeFrame(byte[] frameBuffer)
+        {
+            char progress = ' ';
+            MemoryStream videoFs = new MemoryStream();
+            Array.Reverse(frameBuffer);
+            byte r, g, b;
+
+            int index = 1;
+            int indexBlock2;
+            for(int i = 0; i < 19200; i += 240)
+            {
+                for(int k = 0; k < 120; k += 10)
+                {
+                    for(int j = 1; j < 9; j += 3)
+                    {
+                        indexBlock2 = index + 120;
+                        switch(index / 10 % 4)
+                        {
+                            case 0:
+                                progress = '-';
+                                break;
+                            case 1:
+                                progress = '\\';
+                                break;
+                            case 2:
+                                progress = '|';
+                                break;
+                            case 3:
+                                progress = '/';
+                                break;
+                        }
+
+                        Console.Write("\rExtracting video {0}        ", progress);
+                        r = (byte)((frameBuffer[index] & 0xF0) + ((frameBuffer[index] & 0xF0) >> 4));
+                        b = (byte)((frameBuffer[indexBlock2] & 0xF0) +
+                                   ((frameBuffer[indexBlock2] & 0xF0) >> 4));
+                        g = (byte)((frameBuffer[indexBlock2] & 0x0F) +
+                                   ((frameBuffer[indexBlock2] & 0x0F) << 4));
+                        videoFs.WriteByte(r);
+                        videoFs.WriteByte(g);
+                        videoFs.WriteByte(b);
+
+                        r = (byte)((frameBuffer[indexBlock2 + 1] & 0xF0) +
+                                   ((frameBuffer[indexBlock2 + 1] & 0xF0) >> 4));
+                        b = (byte)((frameBuffer[index] & 0x0F) + ((frameBuffer[index] & 0x0F) << 4));
+                        g = (byte)((frameBuffer[index + 1] & 0xF0) + ((frameBuffer[index + 1] & 0xF0) >> 4));
+                        videoFs.WriteByte(r);
+                        videoFs.WriteByte(g);
+                        videoFs.WriteByte(b);
+
+                        r = (byte)((frameBuffer[index + 1] & 0x0F) + ((frameBuffer[index + 1] & 0x0F) << 4));
+                        b = (byte)((frameBuffer[indexBlock2 + 1] & 0x0F) +
+                                   ((frameBuffer[indexBlock2 + 1] & 0x0F) << 4));
+                        g = (byte)((frameBuffer[indexBlock2 + 2] & 0xF0) +
+                                   ((frameBuffer[indexBlock2 + 2] & 0xF0) >> 4));
+                        videoFs.WriteByte(r);
+                        videoFs.WriteByte(g);
+                        videoFs.WriteByte(b);
+
+                        r = (byte)((frameBuffer[index + 120 + 2] & 0x0F) +
+                                   ((frameBuffer[index + 120 + 2] & 0x0F) << 4));
+                        b = (byte)((frameBuffer[index + 2] & 0xF0) + ((frameBuffer[index + 2] & 0xF0) >> 4));
+                        g = (byte)((frameBuffer[index + 2] & 0x0F) + ((frameBuffer[index + 2] & 0x0F) << 4));
+                        videoFs.WriteByte(r);
+                        videoFs.WriteByte(g);
+                        videoFs.WriteByte(b);
+
+                        index += 3;
+                    }
+
+                    index += 1;
+                }
+
+               index += 120;
+            }
+
+            frameBuffer = videoFs.ToArray();
+            byte[] tmp = new byte[144 * 3];
+            for(int i = 0; i < 80; i++)
+            {
+                Array.Copy(frameBuffer, i * tmp.Length, tmp, 0, tmp.Length);
+                Array.Reverse(tmp);
+                Array.Copy(tmp, 0, frameBuffer, i *tmp.Length, tmp.Length);
+            }
+            return frameBuffer;
         }
     }
 
