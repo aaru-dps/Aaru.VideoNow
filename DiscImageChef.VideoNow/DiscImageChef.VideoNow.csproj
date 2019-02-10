@@ -63,6 +63,9 @@
     <EmbeddedResource Include="Properties\Localization.it.resx">
       <SubType>Designer</SubType>
     </EmbeddedResource>
+    <EmbeddedResource Include="Properties\Localization.nl.resx">
+      <SubType>Designer</SubType>
+    </EmbeddedResource>
     <EmbeddedResource Include="Properties\Localization.pt-BR.resx">
       <SubType>Designer</SubType>
     </EmbeddedResource>
@@ -72,7 +75,13 @@
     <EmbeddedResource Include="Properties\Localization.resx">
       <SubType>Designer</SubType>
     </EmbeddedResource>
+    <EmbeddedResource Include="Properties\Localization.ro.resx">
+      <SubType>Designer</SubType>
+    </EmbeddedResource>
     <EmbeddedResource Include="Properties\Localization.ru.resx">
+      <SubType>Designer</SubType>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Properties\Localization.sv.resx">
       <SubType>Designer</SubType>
     </EmbeddedResource>
   </ItemGroup>

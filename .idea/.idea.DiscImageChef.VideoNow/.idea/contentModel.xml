@@ -15,10 +15,13 @@
           <e p="Localization.es.resx" t="Include" />
           <e p="Localization.fr.resx" t="Include" />
           <e p="Localization.it.resx" t="Include" />
+          <e p="Localization.nl.resx" t="Include" />
           <e p="Localization.pt-BR.resx" t="Include" />
           <e p="Localization.pt-PT.resx" t="Include" />
           <e p="Localization.resx" t="Include" />
+          <e p="Localization.ro.resx" t="Include" />
           <e p="Localization.ru.resx" t="Include" />
+          <e p="Localization.sv.resx" t="Include" />
         </e>
         <e p="bin" t="ExcludeRecursive" />
         <e p="obj" t="ExcludeRecursive" />

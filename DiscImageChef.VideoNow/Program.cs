@@ -36,6 +36,7 @@ using System.Linq;
 using System.Reflection;
 using SharpAvi;
 using SharpAvi.Output;
+
 // ReSharper disable LocalizableElement
 
 namespace DiscImageChef.VideoNow
@@ -203,7 +204,10 @@ namespace DiscImageChef.VideoNow
             }
 
             Console.WriteLine(Localization.FirstFrameFoundAt, framePosition);
-            Console.WriteLine(framePosition % 2352 == 0 ? Localization.FirstFrameIsAtSectorBoundary : Localization.FirstFrameIsNotAtSectorBoundary);
+
+            Console.WriteLine(framePosition % 2352 == 0 ? Localization.FirstFrameIsAtSectorBoundary
+                                  : Localization.FirstFrameIsNotAtSectorBoundary);
+
             char progress = ' ';
 
             var aviWriter = new AviWriter(args[0] + ".avi")
@@ -290,7 +294,7 @@ namespace DiscImageChef.VideoNow
 
                 if(!buffer.SequenceEqual(frameMarkerToUse))
                 {
-                    Console.Write("\r                            \r");
+                    Console.Write("\r                                      \r");
                     Console.WriteLine(Localization.FrameAndNextAreNotAligned, totalFrames);
                     long expectedFramePosition = framePosition;
 
@@ -304,7 +308,7 @@ namespace DiscImageChef.VideoNow
 
                         if(buffer.SequenceEqual(frameMarkerToUse))
                         {
-                            Console.Write("\r                            \r");
+                            Console.Write("\r                                      \r");
 
                             fs.Position = framePosition;
                             frameBuffer = new byte[19600];
@@ -346,12 +350,14 @@ namespace DiscImageChef.VideoNow
                             audioStream.WriteBlock(outFs.ToArray(), 0, (int)outFs.Length);
 
                             totalFrames++;
-                            Console.Write("\r                            \r");
+                            Console.Write("\r                                      \r");
 
                             Console.WriteLine(Localization.FrameFoundAtPosition, framePosition, totalFrames,
                                               framePosition - expectedFramePosition);
 
-                            Console.WriteLine(framePosition % 2352 == 0 ? Localization.FrameIsAtSectorBoundary:Localization.FrameIsNotAtSectorBoundary, totalFrames);
+                            Console.
+                                WriteLine(framePosition % 2352 == 0 ? Localization.FrameIsAtSectorBoundary : Localization.FrameIsNotAtSectorBoundary,
+                                          totalFrames);
 
                             framePosition += 19600;
 
@@ -366,11 +372,11 @@ namespace DiscImageChef.VideoNow
 
                 if(framePosition % 2352 == 0)
                 {
-                    Console.Write("\r                            \r");
+                    Console.Write("\r                                      \r");
                     Console.WriteLine(Localization.FrameIsAtSectorBoundary, totalFrames);
                 }
 
-                Console.Write("\r                            \r");
+                Console.Write("\r                                      \r");
                 fs.Position = framePosition;
                 frameBuffer = new byte[19600];
                 fs.Read(frameBuffer, 0, frameBuffer.Length);
@@ -416,7 +422,7 @@ namespace DiscImageChef.VideoNow
                 framePosition += 19600;
             }
 
-            Console.Write("\r                            \r");
+            Console.Write("\r                                      \r");
             Console.WriteLine(Localization.FramesFound, totalFrames);
 
             fs.Close();
