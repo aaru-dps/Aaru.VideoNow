@@ -36,6 +36,7 @@ using System.Linq;
 using System.Reflection;
 using SharpAvi;
 using SharpAvi.Output;
+// ReSharper disable LocalizableElement
 
 namespace DiscImageChef.VideoNow
 {
@@ -120,14 +121,14 @@ namespace DiscImageChef.VideoNow
 
             if(args.Length != 1)
             {
-                Console.WriteLine("Usage: DiscImageChef.VideoNow dump.raw");
+                Console.WriteLine(Localization.Usage);
 
                 return;
             }
 
             if(!File.Exists(args[0]))
             {
-                Console.WriteLine("Specified file does not exist.");
+                Console.WriteLine(Localization.FileDoesNotExist);
 
                 return;
             }
@@ -140,20 +141,20 @@ namespace DiscImageChef.VideoNow
             }
             catch
             {
-                Console.WriteLine("Could not open specified file.");
+                Console.WriteLine(Localization.FileCannotBeOpened);
 
                 return;
             }
 
             if(fs.Length > MAX_SIZE)
             {
-                Console.WriteLine("File is too big, not continuing.");
+                Console.WriteLine(Localization.FileIsTooBig);
 
                 return;
             }
 
-            Console.WriteLine("File: {0}", args[0]);
-            Console.WriteLine("Searching for first frame....");
+            Console.WriteLine(Localization.FileName, args[0]);
+            Console.WriteLine(Localization.SearchingFirstFrame);
 
             long   framePosition = 0;
             byte[] buffer        = new byte[FrameMarker.Length];
@@ -196,13 +197,13 @@ namespace DiscImageChef.VideoNow
             if(!buffer.SequenceEqual(FrameMarker) &&
                !swappedBuffer.SequenceEqual(SwappedFrameMarker))
             {
-                Console.WriteLine("Could not find any frame!");
+                Console.WriteLine(Localization.NoFrameFound);
 
                 return;
             }
 
-            Console.WriteLine("First frame found at {0}", framePosition);
-            Console.WriteLine("First frame {0} at a sector boundary", framePosition % 2352 == 0 ? "is" : "is not");
+            Console.WriteLine(Localization.FirstFrameFoundAt, framePosition);
+            Console.WriteLine(framePosition % 2352 == 0 ? Localization.FirstFrameIsAtSectorBoundary : Localization.FirstFrameIsNotAtSectorBoundary);
             char progress = ' ';
 
             var aviWriter = new AviWriter(args[0] + ".avi")
@@ -248,7 +249,7 @@ namespace DiscImageChef.VideoNow
                         break;
                 }
 
-                Console.Write("\rExtracting audio {0}        ", progress);
+                Console.Write($"\r{Localization.ExtractingAudio}", progress);
                 outFs.WriteByte(frameBuffer[i]);
             }
 
@@ -282,7 +283,7 @@ namespace DiscImageChef.VideoNow
                         break;
                 }
 
-                Console.Write("\rLooking for more frames {0}", progress);
+                Console.Write($"\r{Localization.LookingForMoreFrames}", progress);
 
                 for(int ab = audioStart; ab < buffer.Length; ab += 10)
                     buffer[ab] = 0;
@@ -290,7 +291,7 @@ namespace DiscImageChef.VideoNow
                 if(!buffer.SequenceEqual(frameMarkerToUse))
                 {
                     Console.Write("\r                            \r");
-                    Console.WriteLine("Frame {0} and the next one are not aligned...", totalFrames);
+                    Console.WriteLine(Localization.FrameAndNextAreNotAligned, totalFrames);
                     long expectedFramePosition = framePosition;
 
                     while(framePosition < fs.Length)
@@ -336,7 +337,7 @@ namespace DiscImageChef.VideoNow
                                         break;
                                 }
 
-                                Console.Write("\rExtracting audio {0}        ", progress);
+                                Console.Write($"\r{Localization.ExtractingAudio}", progress);
                                 outFs.WriteByte(frameBuffer[i]);
                             }
 
@@ -347,11 +348,10 @@ namespace DiscImageChef.VideoNow
                             totalFrames++;
                             Console.Write("\r                            \r");
 
-                            Console.WriteLine("Frame {1} found at {0}, {2} bytes apart", framePosition, totalFrames,
+                            Console.WriteLine(Localization.FrameFoundAtPosition, framePosition, totalFrames,
                                               framePosition - expectedFramePosition);
 
-                            Console.WriteLine("Frame {1} {0} at a sector boundary",
-                                              framePosition % 2352 == 0 ? "is" : "is not", totalFrames);
+                            Console.WriteLine(framePosition % 2352 == 0 ? Localization.FrameIsAtSectorBoundary:Localization.FrameIsNotAtSectorBoundary, totalFrames);
 
                             framePosition += 19600;
 
@@ -367,7 +367,7 @@ namespace DiscImageChef.VideoNow
                 if(framePosition % 2352 == 0)
                 {
                     Console.Write("\r                            \r");
-                    Console.WriteLine("Frame {0} is at a sector boundary", totalFrames);
+                    Console.WriteLine(Localization.FrameIsAtSectorBoundary, totalFrames);
                 }
 
                 Console.Write("\r                            \r");
@@ -402,7 +402,7 @@ namespace DiscImageChef.VideoNow
                             break;
                     }
 
-                    Console.Write("\rExtracting audio {0}        ", progress);
+                    Console.Write($"\r{Localization.ExtractingAudio}", progress);
                     outFs.WriteByte(frameBuffer[i]);
                 }
 
@@ -417,7 +417,7 @@ namespace DiscImageChef.VideoNow
             }
 
             Console.Write("\r                            \r");
-            Console.WriteLine("Found {0} frames", totalFrames);
+            Console.WriteLine(Localization.FramesFound, totalFrames);
 
             fs.Close();
             outFs.Close();
@@ -482,7 +482,7 @@ namespace DiscImageChef.VideoNow
                                 break;
                         }
 
-                        Console.Write("\rExtracting video {0}        ", progress);
+                        Console.Write($"\r{Localization.ExtractingVideo}", progress);
                         r = (byte)((frameBuffer[index]       & 0xF0) + ((frameBuffer[index]       & 0xF0) >> 4));
                         b = (byte)((frameBuffer[indexBlock2] & 0xF0) + ((frameBuffer[indexBlock2] & 0xF0) >> 4));
                         g = (byte)((frameBuffer[indexBlock2] & 0x0F) + ((frameBuffer[indexBlock2] & 0x0F) << 4));

@@ -38,6 +38,7 @@
         <Reference Include="System.Xml" />
     </ItemGroup>
     <ItemGroup>
+        <Compile Include="Localization.Designer.cs" />
         <Compile Include="Program.cs" />
         <Compile Include="Properties\AssemblyInfo.cs" />
     </ItemGroup>
@@ -51,6 +52,9 @@
     </ItemGroup>
     <ItemGroup>
       <PackageReference Include="SharpAvi" Version="2.1.1" />
+    </ItemGroup>
+    <ItemGroup>
+      <EmbeddedResource Include="Localization.resx" />
     </ItemGroup>
     <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
     <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
