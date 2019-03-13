@@ -48,6 +48,16 @@ namespace DiscImageChef.VideoNow
         static string                                assemblyTitle;
         static AssemblyInformationalVersionAttribute assemblyVersion;
 
+        static readonly byte[] FrameStart =
+        {
+            0xE3, 0x81, 0xC7, 0xE3, 0x81, 0xC7, 0xE3, 0x81
+        };
+
+        static readonly byte[] SwappedFrameStart =
+        {
+            0x81, 0xE3, 0xE3, 0xC7, 0xC7, 0x81, 0x81, 0xE3
+        };
+
         /// <summary>
         ///     This is some kind of header. Every 10 bytes there's an audio byte. Here it is without reordering from little
         ///     endian, so the first appearence is at 9th byte.
@@ -161,9 +171,21 @@ namespace DiscImageChef.VideoNow
             byte[] buffer        = new byte[FrameMarker.Length];
             byte[] swappedBuffer = new byte[FrameMarker.Length];
             bool   swapped       = false;
+            byte[] startBuffer   = new byte[FrameStart.Length];
 
             while(framePosition < 19600)
             {
+                fs.Position = framePosition;
+                fs.Read(startBuffer, 0, startBuffer.Length);
+
+                if(!startBuffer.SequenceEqual(FrameStart) &&
+                   !startBuffer.SequenceEqual(SwappedFrameStart))
+                {
+                    framePosition++;
+
+                    continue;
+                }
+
                 fs.Position = framePosition;
                 fs.Read(buffer, 0, buffer.Length);
 
