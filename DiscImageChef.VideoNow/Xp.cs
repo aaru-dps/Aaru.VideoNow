@@ -1,3 +1,9 @@
+using System;
+using System.IO;
+using System.Linq;
+using SharpAvi;
+using SharpAvi.Output;
+
 namespace DiscImageChef.VideoNow
 {
     public static class Xp
@@ -145,5 +151,229 @@ namespace DiscImageChef.VideoNow
             0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0x00, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF,
             0x00, 0xFF
         };
+
+        public static void Decode(string filename, Stream fs, bool swapped, long framePosition)
+        {
+            char progress = ' ';
+
+            var aviWriter = new AviWriter(filename + ".avi")
+            {
+                EmitIndex1 = true, FramesPerSecond = 18
+            };
+
+            IAviVideoStream videoStream = aviWriter.AddVideoStream(144, 80, BitsPerPixel.Bpp24);
+            videoStream.Codec = KnownFourCCs.Codecs.Uncompressed;
+            IAviAudioStream audioStream = aviWriter.AddAudioStream(2, 17784, 8);
+
+            fs.Position = framePosition;
+            byte[] frameBuffer = new byte[19760];
+            fs.Read(frameBuffer, 0, frameBuffer.Length);
+
+            int    audioStart       = swapped ? 9 : 8;
+            byte[] frameMarkerToUse = swapped ? SwappedFrameMarker : FrameMarker;
+            byte[] frameMaskToUse   = swapped ? SwappedFrameMask : FrameMask;
+
+            if(swapped)
+                frameBuffer = Swapping.SwapBuffer(frameBuffer);
+
+            var outFs = new MemoryStream();
+
+            for(int i = 9; i <= frameBuffer.Length; i += 10)
+            {
+                switch(i / 10 % 4)
+                {
+                    case 0:
+                        progress = '-';
+
+                        break;
+                    case 1:
+                        progress = '\\';
+
+                        break;
+                    case 2:
+                        progress = '|';
+
+                        break;
+                    case 3:
+                        progress = '/';
+
+                        break;
+                }
+
+                Console.Write($"\r{Localization.ExtractingAudio}", progress);
+                outFs.WriteByte(frameBuffer[i]);
+            }
+
+            byte[] videoFrame = Color.DecodeFrame(frameBuffer);
+            videoStream.WriteFrame(true, videoFrame, 0, videoFrame.Length);
+            audioStream.WriteBlock(outFs.ToArray(), 0, (int)outFs.Length);
+
+            int totalFrames = 1;
+            framePosition += 19760;
+            byte[] buffer = new byte[frameMarkerToUse.Length];
+
+            while(framePosition + 19760 < fs.Length)
+            {
+                switch(totalFrames % 4)
+                {
+                    case 0:
+                        progress = '-';
+
+                        break;
+                    case 1:
+                        progress = '\\';
+
+                        break;
+                    case 2:
+                        progress = '|';
+
+                        break;
+                    case 3:
+                        progress = '/';
+
+                        break;
+                }
+
+                Console.Write($"\r{Localization.LookingForMoreFrames}", progress);
+
+                for(int i = 0; i < buffer.Length; i++)
+                    buffer[i] &= frameMaskToUse[i];
+
+                if(!buffer.SequenceEqual(frameMarkerToUse))
+                {
+                    Console.Write("\r                                      \r");
+                    Console.WriteLine(Localization.FrameAndNextAreNotAligned, totalFrames);
+                    long expectedFramePosition = framePosition;
+
+                    while(framePosition < fs.Length)
+                    {
+                        fs.Position = framePosition;
+                        fs.Read(buffer, 0, buffer.Length);
+
+                        for(int i = 0; i < buffer.Length; i++)
+                            buffer[i] &= frameMaskToUse[i];
+
+                        if(buffer.SequenceEqual(frameMarkerToUse))
+                        {
+                            Console.Write("\r                                      \r");
+
+                            fs.Position = framePosition;
+                            frameBuffer = new byte[19760];
+                            fs.Read(frameBuffer, 0, frameBuffer.Length);
+
+                            if(swapped)
+                                frameBuffer = Swapping.SwapBuffer(frameBuffer);
+
+                            outFs = new MemoryStream();
+
+                            for(int i = 9; i <= frameBuffer.Length; i += 10)
+                            {
+                                switch(i / 10 % 4)
+                                {
+                                    case 0:
+                                        progress = '-';
+
+                                        break;
+                                    case 1:
+                                        progress = '\\';
+
+                                        break;
+                                    case 2:
+                                        progress = '|';
+
+                                        break;
+                                    case 3:
+                                        progress = '/';
+
+                                        break;
+                                }
+
+                                Console.Write($"\r{Localization.ExtractingAudio}", progress);
+                                outFs.WriteByte(frameBuffer[i]);
+                            }
+
+                            videoFrame = Color.DecodeFrame(frameBuffer);
+                            videoStream.WriteFrame(true, videoFrame, 0, videoFrame.Length);
+                            audioStream.WriteBlock(outFs.ToArray(), 0, (int)outFs.Length);
+
+                            totalFrames++;
+                            Console.Write("\r                                      \r");
+
+                            Console.WriteLine(Localization.FrameFoundAtPosition, framePosition, totalFrames,
+                                              framePosition - expectedFramePosition);
+
+                            Console.
+                                WriteLine(framePosition % 2352 == 0 ? Localization.FrameIsAtSectorBoundary : Localization.FrameIsNotAtSectorBoundary,
+                                          totalFrames);
+
+                            framePosition += 19760;
+
+                            break;
+                        }
+
+                        framePosition++;
+                    }
+
+                    continue;
+                }
+
+                if(framePosition % 2352 == 0)
+                {
+                    Console.Write("\r                                      \r");
+                    Console.WriteLine(Localization.FrameIsAtSectorBoundary, totalFrames);
+                }
+
+                Console.Write("\r                                      \r");
+                fs.Position = framePosition;
+                frameBuffer = new byte[19760];
+                fs.Read(frameBuffer, 0, frameBuffer.Length);
+
+                if(swapped)
+                    frameBuffer = Swapping.SwapBuffer(frameBuffer);
+
+                outFs = new MemoryStream();
+
+                for(int i = 9; i <= frameBuffer.Length; i += 10)
+                {
+                    switch(i / 10 % 4)
+                    {
+                        case 0:
+                            progress = '-';
+
+                            break;
+                        case 1:
+                            progress = '\\';
+
+                            break;
+                        case 2:
+                            progress = '|';
+
+                            break;
+                        case 3:
+                            progress = '/';
+
+                            break;
+                    }
+
+                    Console.Write($"\r{Localization.ExtractingAudio}", progress);
+                    outFs.WriteByte(frameBuffer[i]);
+                }
+
+                videoFrame = Color.DecodeFrame(frameBuffer);
+                videoStream.WriteFrame(true, videoFrame, 0, videoFrame.Length);
+                audioStream.WriteBlock(outFs.ToArray(), 0, (int)outFs.Length);
+
+                totalFrames++;
+                fs.Position = framePosition;
+                fs.Read(buffer, 0, buffer.Length);
+                framePosition += 19760;
+            }
+
+            Console.Write("\r                                      \r");
+            Console.WriteLine(Localization.FramesFound, totalFrames);
+
+            outFs.Close();
+            aviWriter.Close();
+        }
     }
 }

@@ -197,7 +197,7 @@ namespace DiscImageChef.VideoNow
                                   : Localization.FirstFrameIsNotAtSectorBoundary);
 
             if(xp)
-                Console.WriteLine("VideoNow XP discs are not yet supported");
+                Xp.Decode(args[0], fs, swapped, framePosition);
             else
                 Color.Decode(args[0], fs, swapped, framePosition);
 

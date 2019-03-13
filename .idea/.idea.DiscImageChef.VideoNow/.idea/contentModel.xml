@@ -26,6 +26,7 @@
           <e p="Localization.sv.resx" t="Include" />
         </e>
         <e p="Swapping.cs" t="Include" />
+        <e p="Xp.cs" t="Include" />
         <e p="bin" t="ExcludeRecursive" />
         <e p="obj" t="ExcludeRecursive" />
       </e>
