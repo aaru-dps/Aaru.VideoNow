@@ -535,8 +535,14 @@ namespace DiscImageChef.VideoNow
                 index += 120;
             }
 
-            frameBuffer = videoFs.ToArray();
-            Array.Reverse(frameBuffer);
+            frameBuffer = new byte[videoFs.Length];
+            byte[] frameBuffer2 = videoFs.ToArray();
+
+            for(int row = 0; row < 80; row++)
+            {
+                for(int p = 0; p < 432; p++)
+                    frameBuffer[row * 432 + p] = frameBuffer2[row * 432 + (431 - p)];
+            }
 
             return frameBuffer;
         }
