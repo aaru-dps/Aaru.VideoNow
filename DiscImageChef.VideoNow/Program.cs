@@ -107,13 +107,16 @@ namespace DiscImageChef.VideoNow
             Console.WriteLine(Localization.FileName, args[0]);
             Console.WriteLine(Localization.SearchingFirstFrame);
 
-            long   framePosition = 0;
-            byte[] buffer        = new byte[Color.FrameMarker.Length];
-            byte[] swappedBuffer = new byte[Color.FrameMarker.Length];
-            bool   swapped       = false;
-            byte[] startBuffer   = new byte[FrameStart.Length];
+            long   framePosition   = 0;
+            byte[] buffer          = new byte[Color.FrameMarker.Length];
+            byte[] swappedBuffer   = new byte[Color.FrameMarker.Length];
+            bool   swapped         = false;
+            bool   xp              = false;
+            byte[] startBuffer     = new byte[FrameStart.Length];
+            byte[] xpBuffer        = new byte[Xp.FrameMarker.Length];
+            byte[] xpSwappedBuffer = new byte[Xp.FrameMarker.Length];
 
-            while(framePosition < 19600)
+            while(framePosition < 19760)
             {
                 fs.Position = framePosition;
                 fs.Read(startBuffer, 0, startBuffer.Length);
@@ -148,17 +151,40 @@ namespace DiscImageChef.VideoNow
                     break;
                 }
 
+                fs.Position = framePosition;
+                fs.Read(xpBuffer, 0, xpBuffer.Length);
+
+                for(int i = 0; i < xpBuffer.Length; i++)
+                    xpBuffer[i] &= Xp.FrameMask[i];
+
+                if(xpBuffer.SequenceEqual(Xp.FrameMarker))
+                {
+                    xp = true;
+
+                    break;
+                }
+
+                fs.Position = framePosition;
+                fs.Read(xpSwappedBuffer, 0, xpSwappedBuffer.Length);
+
+                for(int i = 0; i < xpSwappedBuffer.Length; i++)
+                    xpSwappedBuffer[i] &= Xp.SwappedFrameMask[i];
+
+                if(xpSwappedBuffer.SequenceEqual(Xp.SwappedFrameMarker))
+                {
+                    swapped = true;
+                    xp      = true;
+
+                    break;
+                }
+
                 framePosition++;
             }
 
-            for(int ab = 8; ab < buffer.Length; ab += 10)
-                buffer[ab] = 0;
-
-            for(int ab = 9; ab < swappedBuffer.Length; ab += 10)
-                swappedBuffer[ab] = 0;
-
-            if(!buffer.SequenceEqual(Color.FrameMarker) &&
-               !swappedBuffer.SequenceEqual(Color.SwappedFrameMarker))
+            if(!buffer.SequenceEqual(Color.FrameMarker)               &&
+               !swappedBuffer.SequenceEqual(Color.SwappedFrameMarker) &&
+               !xpBuffer.SequenceEqual(Xp.FrameMarker)                &&
+               !xpSwappedBuffer.SequenceEqual(Xp.SwappedFrameMarker))
             {
                 Console.WriteLine(Localization.NoFrameFound);
 
@@ -170,7 +196,10 @@ namespace DiscImageChef.VideoNow
             Console.WriteLine(framePosition % 2352 == 0 ? Localization.FirstFrameIsAtSectorBoundary
                                   : Localization.FirstFrameIsNotAtSectorBoundary);
 
-            Color.Decode(args[0], fs, swapped, framePosition);
+            if(xp)
+                Console.WriteLine("VideoNow XP discs are not yet supported");
+            else
+                Color.Decode(args[0], fs, swapped, framePosition);
 
             fs.Close();
         }
