@@ -180,7 +180,7 @@ namespace Aaru.VideoNow
 
             for(int i = 9; i <= frameBuffer.Length; i += 10)
             {
-                switch(i / 10 % 4)
+                switch((i / 10) % 4)
                 {
                     case 0:
                         progress = '-';
@@ -268,7 +268,7 @@ namespace Aaru.VideoNow
 
                             for(int i = 9; i <= frameBuffer.Length; i += 10)
                             {
-                                switch(i / 10 % 4)
+                                switch((i / 10) % 4)
                                 {
                                     case 0:
                                         progress = '-';
@@ -335,7 +335,7 @@ namespace Aaru.VideoNow
 
                 for(int i = 9; i <= frameBuffer.Length; i += 10)
                 {
-                    switch(i / 10 % 4)
+                    switch((i / 10) % 4)
                     {
                         case 0:
                             progress = '-';

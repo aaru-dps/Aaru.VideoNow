@@ -93,7 +93,7 @@ namespace Aaru.VideoNow
 
             for(int i = 9; i <= frameBuffer.Length; i += 10)
             {
-                switch(i / 10 % 4)
+                switch((i / 10) % 4)
                 {
                     case 0:
                         progress = '-';
@@ -181,7 +181,7 @@ namespace Aaru.VideoNow
 
                             for(int i = 9; i <= frameBuffer.Length; i += 10)
                             {
-                                switch(i / 10 % 4)
+                                switch((i / 10) % 4)
                                 {
                                     case 0:
                                         progress = '-';
@@ -248,7 +248,7 @@ namespace Aaru.VideoNow
 
                 for(int i = 9; i <= frameBuffer.Length; i += 10)
                 {
-                    switch(i / 10 % 4)
+                    switch((i / 10) % 4)
                     {
                         case 0:
                             progress = '-';
@@ -307,7 +307,7 @@ namespace Aaru.VideoNow
                     {
                         indexBlock2 = index + 120;
 
-                        switch(index / 10 % 4)
+                        switch((index / 10) % 4)
                         {
                             case 0:
                                 progress = '-';
@@ -380,7 +380,7 @@ namespace Aaru.VideoNow
             for(int row = 0; row < 80; row++)
             {
                 for(int p = 0; p < 432; p++)
-                    frameBuffer[row * 432 + p] = frameBuffer2[row * 432 + (431 - p)];
+                    frameBuffer[(row * 432) + p] = frameBuffer2[(row * 432) + (431 - p)];
             }
 
             return frameBuffer;
