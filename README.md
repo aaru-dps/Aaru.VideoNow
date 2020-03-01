@@ -1,9 +1,7 @@
-DiscImageChef v4.5.99.1693
+Aaru.VideoNow
 
-Disc Image Chef (because "swiss-army-knife" is used too much)
+Copyright © 2011-2020 Natalia Portillo <claunia@claunia.com>
 
-Copyright © 2011-2019 Natalia Portillo <claunia@claunia.com>
+Aaru.VideoNow is an analyzing and conversion tool for Tiger and Hasbro VideoNow and VideoNow Color formats.
 
-DiscImageChef.VideoNow is an analyzing and conversion tool for Tiger and Hasbro VideoNow and VideoNow Color formats.
-
-Part of [DiscImageChef](https://github.com/discimagechef/DiscImageChef)
+Part of [Aaru Data Preservation Suite](https://github.com/aaru-dps/Aaru)
