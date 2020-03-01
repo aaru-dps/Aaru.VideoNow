@@ -7,9 +7,9 @@
     <e p="$USER_HOME$/.config/git/ignore" t="IncludeRecursive" />
     <e p="$PROJECT_DIR$" t="IncludeFlat">
       <e p=".git/info/exclude" t="IncludeRecursive" />
-      <e p="DiscImageChef.VideoNow" t="IncludeRecursive">
+      <e p="Aaru.VideoNow" t="IncludeRecursive">
+        <e p="Aaru.VideoNow.csproj" t="IncludeRecursive" />
         <e p="Color.cs" t="Include" />
-        <e p="DiscImageChef.VideoNow.csproj" t="IncludeRecursive" />
         <e p="Program.cs" t="Include" />
         <e p="Properties" t="Include">
           <e p="AssemblyInfo.cs" t="Include" />
@@ -25,6 +25,7 @@
           <e p="Localization.ru.resx" t="Include" />
           <e p="Localization.sv.resx" t="Include" />
         </e>
+        <e p="README.md" t="Include" />
         <e p="Swapping.cs" t="Include" />
         <e p="Xp.cs" t="Include" />
         <e p="bin" t="ExcludeRecursive" />
@@ -32,7 +33,6 @@
       </e>
       <e p="DiscImageChef.VideoNow.sln" t="IncludeFlat" />
       <e p="LICENSE" t="Include" />
-      <e p="README.md" t="Include" />
       <e p="packages" t="ExcludeRecursive" />
     </e>
   </component>

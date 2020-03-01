@@ -1,6 +1,6 @@
 
 Microsoft Visual Studio Solution File, Format Version 12.00
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DiscImageChef.VideoNow", "DiscImageChef.VideoNow\DiscImageChef.VideoNow.csproj", "{FAA37B4C-8EF8-434B-9342-6185DB0D419C}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Aaru.VideoNow", "Aaru.VideoNow\Aaru.VideoNow.csproj", "{FAA37B4C-8EF8-434B-9342-6185DB0D419C}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
