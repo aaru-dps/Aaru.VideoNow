@@ -99,7 +99,7 @@
     <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=2.0.3500.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
   </resheader>
   <data name="Usage" xml:space="preserve">
-    <value>Uso: DiscImageChef.VideoNow dump.raw</value>
+    <value>Uso: Aaru.VideoNow dump.raw</value>
   </data>
   <data name="FileDoesNotExist" xml:space="preserve">
     <value>El archivo especificado no existe.</value>

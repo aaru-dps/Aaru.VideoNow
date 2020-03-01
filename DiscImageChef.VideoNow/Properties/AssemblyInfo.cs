@@ -4,12 +4,12 @@ using System.Runtime.InteropServices;
 // General Information about an assembly is controlled through the following
 // set of attributes. Change these attribute values to modify the information
 // associated with an assembly.
-[assembly: AssemblyTitle("DiscImageChef.VideoNow")]
+[assembly: AssemblyTitle("Aaru.VideoNow")]
 [assembly: AssemblyDescription("")]
 [assembly: AssemblyConfiguration("")]
 [assembly: AssemblyCompany("")]
-[assembly: AssemblyProduct("DiscImageChef.VideoNow")]
-[assembly: AssemblyCopyright("Copyright © 2019 Natalia Portillo")]
+[assembly: AssemblyProduct("Aaru.VideoNow")]
+[assembly: AssemblyCopyright("Copyright © 2020 Natalia Portillo")]
 [assembly: AssemblyTrademark("")]
 [assembly: AssemblyCulture("")]
 

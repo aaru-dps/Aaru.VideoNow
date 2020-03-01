@@ -7,8 +7,8 @@
     <ProjectGuid>{FAA37B4C-8EF8-434B-9342-6185DB0D419C}</ProjectGuid>
     <OutputType>Exe</OutputType>
     <AppDesignerFolder>Properties</AppDesignerFolder>
-    <RootNamespace>DiscImageChef.VideoNow</RootNamespace>
-    <AssemblyName>DiscImageChef.VideoNow</AssemblyName>
+    <RootNamespace>Aaru.VideoNow</RootNamespace>
+    <AssemblyName>Aaru.VideoNow</AssemblyName>
     <TargetFrameworkVersion>v4.6.1</TargetFrameworkVersion>
     <FileAlignment>512</FileAlignment>
   </PropertyGroup>
@@ -89,7 +89,7 @@
     </EmbeddedResource>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
-  <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
+  <!-- To modify your build process, add your task inside one of the targets below and uncomment it.
          Other similar extension points exist, see Microsoft.Common.targets.
     <Target Name="BeforeBuild">
     </Target>
