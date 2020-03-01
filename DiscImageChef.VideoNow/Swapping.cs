@@ -1,4 +1,4 @@
-namespace DiscImageChef.VideoNow
+namespace Aaru.VideoNow
 {
     public static class Swapping
     {

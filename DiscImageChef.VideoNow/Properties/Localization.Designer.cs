@@ -8,7 +8,7 @@
 // </auto-generated>
 //------------------------------------------------------------------------------
 
-namespace DiscImageChef.VideoNow {
+namespace Aaru.VideoNow {
     using System;
 
 

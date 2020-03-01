@@ -4,7 +4,7 @@ using System.Linq;
 using SharpAvi;
 using SharpAvi.Output;
 
-namespace DiscImageChef.VideoNow
+namespace Aaru.VideoNow
 {
     public static class Color
     {

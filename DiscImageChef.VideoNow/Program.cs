@@ -37,7 +37,7 @@ using System.Reflection;
 
 // ReSharper disable LocalizableElement
 
-namespace DiscImageChef.VideoNow
+namespace Aaru.VideoNow
 {
     internal static class MainClass
     {
